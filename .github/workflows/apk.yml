@@ -1,0 +1,50 @@
+name: Build Android APK
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'android/**'
+      - '.github/workflows/apk.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.7'
+
+      - name: Build unsigned release APK
+        working-directory: android
+        run: |
+          set -o pipefail
+          gradle assembleRelease --no-daemon --stacktrace 2>&1 | tee ../build.log
+
+      - name: Publish unsigned APK to apk-build branch
+        if: always()
+        run: |
+          mkdir -p /tmp/out
+          cp build.log /tmp/out/build.log || true
+          cp android/app/build/outputs/apk/release/*.apk /tmp/out/ 2>/dev/null || true
+          echo "run=${GITHUB_RUN_NUMBER} sha=${GITHUB_SHA} status=${{ job.status }}" > /tmp/out/STATUS.txt
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout --orphan apk-build
+          git rm -rf . > /dev/null
+          rm -rf ./* .github android 2>/dev/null || true
+          cp /tmp/out/* .
+          git add -A
+          git commit -m "APK build ${GITHUB_RUN_NUMBER} (${{ job.status }})"
+          git push -f origin apk-build

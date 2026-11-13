@@ -4,6 +4,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>নিউজকার্ড স্টুডিও</title>
+<meta name="theme-color" content="#0c0e13">
+<meta name="description" content="প্রিমিয়াম নিউজকার্ড মেকার — রেডি লেআউট, নিজের টেমপ্লেট বিল্ডার, HD ডাউনলোড">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" type="image/png" href="/icons/favicon-64.png">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Anek+Bangla:wght@400;500;600;700;800&family=Hind+Siliguri:wght@400;500;600;700&family=Noto+Sans+Bengali:wght@400;600;700;800;900&family=Noto+Serif+Bengali:wght@400;700;900&family=Baloo+Da+2:wght@400;600;800&family=Tiro+Bangla&family=Galada&family=Mina:wght@400;700&family=Atma:wght@500;700&family=Inter:wght@400;500;600;700;800;900&family=Archivo+Black&family=Anton&family=Bebas+Neue&family=Oswald:wght@500;700&family=Montserrat:wght@500;700;800;900&family=Poppins:wght@500;700;800;900&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
@@ -257,11 +265,24 @@ input[type=color].csw::-webkit-color-swatch{border-radius:50%}
 .thumbs .newtpl small{color:var(--tx);white-space:normal}
 textarea{font-family:inherit}
 @media (max-width:420px){.posrow{grid-template-columns:108px 1fr}.pos9{height:128px}.nudge .keys{grid-template-columns:repeat(3,34px)}}
+.savechip{position:absolute;top:14px;right:16px;z-index:3;display:flex;align-items:center;gap:7px;font-size:11.5px;color:var(--mut);background:rgba(19,21,28,.78);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border:1px solid var(--ln);border-radius:999px;padding:5px 11px 5px 9px;font-family:"Hind Siliguri","Inter",sans-serif;pointer-events:none;transition:color .2s}
+.savechip i{width:7px;height:7px;border-radius:50%;background:#8ff3dc;box-shadow:0 0 8px #8ff3dc}
+.savechip.ing i{background:#ffd166;box-shadow:0 0 8px #ffd166;animation:pulse .8s infinite alternate}
+@keyframes pulse{to{opacity:.35}}
+.hist{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.hcard{position:relative;display:flex;flex-direction:column;gap:4px;min-width:0}
+.hcard .hth{width:100%;aspect-ratio:4/5;border-radius:12px;background:#0b0d11 center/cover no-repeat;border:1.5px solid var(--ln);padding:0}
+.hcard.on .hth{border-color:transparent;background-clip:padding-box;outline:1.5px solid #8ff3dc;outline-offset:-1.5px}
+.hcard .hnm{font-size:11.5px;line-height:1.3;color:var(--tx);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.hcard .hmeta{font-size:10.5px;color:var(--mut)}
+.hcard .hx{position:absolute;top:-6px;right:-6px;width:24px;height:24px;border-radius:50%;background:var(--s4);border:1px solid var(--ln2);display:grid;place-items:center;color:var(--tx)}
+@media (max-width:900px){.savechip{top:8px;right:8px;font-size:10.5px;padding:4px 9px 4px 8px}}
 </style>
 </head>
 <body>
 <div class="app">
   <main class="stage">
+    <div class="savechip ok" id="saveChip"><i></i><span>সব সেভ হয়েছে</span></div>
     <div class="cwrap"><canvas id="cv" width="1080" height="1350"></canvas><canvas id="ov" width="1080" height="1350"></canvas></div>
     <div class="bar">
       <div class="ibg"><button class="ib" id="undo" title="আনডু (Ctrl+Z)" data-ic="undo"></button><button class="ib" id="redo" title="রিডু (Ctrl+Y)" data-ic="redo"></button></div>
@@ -448,6 +469,18 @@ textarea{font-family:inherit}
 
     <section class="tab" data-tab="save">
       <div class="card">
+        <h4>আমার কার্ড <span class="hint">সব কাজ এই ফোন / ব্রাউজারে সেভ থাকে</span></h4>
+        <div class="hist" id="hist"></div>
+        <button class="sbtn full" id="histSave" style="margin-top:12px"><span data-ic="save"></span>এখনকার কার্ড "আমার কার্ড"-এ রাখুন</button>
+      </div>
+      <div class="card" id="appCard" style="display:none">
+        <h4>Android অ্যাপ</h4>
+        <p class="hint" style="margin-top:0">অ্যাপ ইনস্টল করলে হোম স্ক্রিন থেকে এক ট্যাপে খুলবে, পুরো স্ক্রিনে চলবে, ইন্টারনেট ছাড়াও খুলবে।</p>
+        <a class="pill mesh-blue" href="/newscard-studio.apk" download style="width:100%;text-decoration:none"><span data-ic="upload" style="transform:rotate(180deg);display:inline-grid"></span>APK ডাউনলোড</a>
+        <button class="pill gborder" id="pwaBtn" style="width:100%;margin-top:8px;display:none">হোম স্ক্রিনে ইনস্টল করুন</button>
+        <p class="hint" style="margin:10px 0 0">APK ইনস্টলের সময় ফোন "Unknown apps / অজানা উৎস" অনুমতি চাইলে একবার Allow দিন।</p>
+      </div>
+      <div class="card">
         <h4>ডাউনলোড ফরম্যাট</h4>
         <div class="seg" data-seg="fmt" data-opts="png:PNG,jpg:JPG,webp:WEBP"></div>
         <p class="hint" style="margin:8px 0 14px">PNG সেরা মান · JPG ছোট ফাইল · WEBP ছোট ও ঝকঝকে</p>
@@ -494,6 +527,7 @@ textarea{font-family:inherit}
     <li><span><b>বিল্ডার</b> — নিজের টেমপ্লেট বানান: ছবি, লেখা, লোগো, শেপ, PNG ব্লক যেখানে খুশি বসান। একবার বানালে সেভ থাকে।</span></li>
     <li><span><b>ফন্ট, স্পেসিং, রং, ইফেক্ট</b> — নিজের মতো সাজান। নিজের TTF/OTF ফন্টও আপলোড করা যায়।</span></li>
     <li><span><b>ব্র্যান্ড</b> — লোগো ও ব্যানার দিন, <b>সেভ</b> ট্যাবে প্রিসেট রাখুন।</span></li>
+    <li><span><b>অটো-সেভ</b> — যা করবেন সাথে সাথে ফোনে সেভ হয়ে যায়। অ্যাপ বন্ধ করে খুললেও সব থাকবে। পুরোনো কার্ড "সেভ" ট্যাবের "আমার কার্ড"-এ পাবেন।</span></li>
     <li><span><b>ডাউনলোড</b> চাপুন। পরের নিউজের জন্য <b>নতুন</b> — স্টাইল আর লোগো থেকে যাবে।</span></li>
   </ol>
   <p class="hint">শর্টকাট: <kbd>Ctrl</kbd>+<kbd>S</kbd> ডাউনলোড · <kbd>Ctrl</kbd>+<kbd>Z</kbd> আনডু · <kbd>Ctrl</kbd>+<kbd>V</kbd> ছবি পেস্ট · <kbd>←</kbd><kbd>→</kbd> লেআউট</p>
@@ -589,7 +623,7 @@ const DEF={layout:0,size:'4:5',
   scale:1,lhm:1,track:0,wsp:1,bscale:1,btrack:0,upper:true,
   overlay:1,grain:.3,vig:.25,border:0,logoScale:1,
   pBright:1,pContrast:1,pSat:1,pBlur:0,pBw:false,pFlip:false,
-  hide:{},customs:[],sp:{},cw:'1080',ch:'1350',res:'1',zoom:1,ox:0,oy:0,showAd:true,fmt:'png'};
+  hide:{},customs:[],sp:{},cardId:'',cw:'1080',ch:'1350',res:'1',zoom:1,ox:0,oy:0,showAd:true,fmt:'png'};
 const STYLE_KEYS=['bg','text','acc','acc2','fontHead','fontBody','weight','mark','align','hfx','scale','lhm','track','wsp','bscale','btrack','upper','overlay','grain','vig','border','logoScale'];
 let S=Object.assign({},DEF);
 let IMG=null,IMGF=null,SLOT={2:null,3:null,4:null},SLOTF={2:null,3:null,4:null},LOGO=null,AD=null,K=1,U=1,EXPORTING=false,T={};
@@ -600,12 +634,12 @@ try{const s=JSON.parse(store.get('nc_state')||'null');if(s)S=Object.assign({},DE
 if(!S.hide||typeof S.hide!=='object')S.hide={};if(!Array.isArray(S.customs))S.customs=[];if(!S.sp||typeof S.sp!=='object')S.sp={};
 if(!S.date)S.date=bnDate();
 if(!(S.size in SIZES)&&S.size!=='custom')S.size='4:5';
-S.zoom=1;S.ox=0;S.oy=0;
-const saveState=()=>store.set('nc_state',JSON.stringify(S));
-const idb={db:null,
-  open(){return new Promise(res=>{try{const r=indexedDB.open('newscard',1);r.onupgradeneeded=()=>r.result.createObjectStore('fonts',{keyPath:'name'});r.onsuccess=()=>res(this.db=r.result);r.onerror=()=>res(null)}catch(e){res(null)}})},
-  async tx(mode,fn){const db=this.db||await this.open();if(!db)return null;return new Promise(res=>{try{const t=db.transaction('fonts',mode);const q=fn(t.objectStore('fonts'));q.onsuccess=()=>res(q.result);q.onerror=()=>res(null)}catch(e){res(null)}})},
-  all(){return this.tx('readonly',s=>s.getAll())},put(v){return this.tx('readwrite',s=>s.put(v))},del(k){return this.tx('readwrite',s=>s.delete(k))}};
+const idb={db:null,_p:null,
+  open(){if(this._p)return this._p;return this._p=new Promise(res=>{try{const r=indexedDB.open('newscard',2);
+    r.onupgradeneeded=()=>{const db=r.result;if(!db.objectStoreNames.contains('fonts'))db.createObjectStore('fonts',{keyPath:'name'});if(!db.objectStoreNames.contains('kv'))db.createObjectStore('kv');if(!db.objectStoreNames.contains('cards'))db.createObjectStore('cards',{keyPath:'id'})};
+    r.onsuccess=()=>{this.db=r.result;res(this.db)};r.onerror=()=>res(null);r.onblocked=()=>res(null)}catch(e){res(null)}})},
+  async tx(store,mode,fn){const db=this.db||await this.open();if(!db)return null;return new Promise(res=>{try{const t=db.transaction(store,mode);const q=fn(t.objectStore(store));let out=null;q.onsuccess=()=>{out=q.result;if(mode==='readonly')res(out)};q.onerror=()=>res(null);if(mode!=='readonly'){t.oncomplete=()=>res(out);t.onerror=()=>res(null);t.onabort=()=>res(null)}}catch(e){res(null)}})},
+  all(){return this.tx('fonts','readonly',s=>s.getAll())},put(v){return this.tx('fonts','readwrite',s=>s.put(v))},del(k){return this.tx('fonts','readwrite',s=>s.delete(k))}};
 
 /* ---------- color utils ---------- */
 function rgb(hex){let h=String(hex||'#000').replace('#','');if(h.length===3)h=[...h].map(x=>x+x).join('');const n=parseInt(h,16)||0;return[n>>16&255,n>>8&255,n&255]}
@@ -1475,6 +1509,79 @@ function renderBuilder(){const root=$('#builder');if(!root)return;root.innerHTML
   drawOverlay();
 }
 
+/* ================= REALTIME LOCAL SAVE + CARD HISTORY + APP ================= */
+const kv={get:k=>idb.tx('kv','readonly',s=>s.get(k)),set:(k,v)=>idb.tx('kv','readwrite',s=>s.put(v,k)),del:k=>idb.tx('kv','readwrite',s=>s.delete(k))};
+const cardsDB={all:()=>idb.tx('cards','readonly',s=>s.getAll()),get:k=>idb.tx('cards','readonly',s=>s.get(k)),put:v=>idb.tx('cards','readwrite',s=>s.put(v)),del:k=>idb.tx('cards','readwrite',s=>s.delete(k))};
+let PEND=0;
+function markSaving(){PEND++;const c=$('#saveChip');if(c){c.className='savechip ing';c.lastChild.textContent='সেভ হচ্ছে…'}}
+function markSaved(){PEND=Math.max(0,PEND-1);if(PEND)return;const c=$('#saveChip');if(c){c.className='savechip ok';c.lastChild.textContent='সব সেভ হয়েছে'}}
+let SVT=0;
+function saveState(){if(!SVT)markSaving();clearTimeout(SVT);SVT=setTimeout(flushState,250)}
+async function flushState(){if(SVT){clearTimeout(SVT);SVT=0}else markSaving();
+  let snapS=null;try{snapS=JSON.parse(JSON.stringify(S))}catch(e){}
+  if(snapS)await kv.set('state',snapS);
+  store.set('nc_state',JSON.stringify(S));markSaved()}
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'&&SVT)flushState()});
+window.addEventListener('pagehide',()=>{if(SVT)flushState()});
+
+function canvasBlob(c,type,q){return new Promise(r=>{if(!c)return r(null);try{c.toBlob(b=>r(b),type||'image/webp',q||.95)}catch(e){r(null)}})}
+const BLOBC=new WeakMap();
+async function blobOf(c,type,q){if(!c)return null;const k=type||'image/webp';let m=BLOBC.get(c);if(!m){m={};BLOBC.set(c,m)}if(!m[k])m[k]=await canvasBlob(c,k,q);return m[k]}
+async function blobCanvas(b){if(!b)return null;try{const url=URL.createObjectURL(b);const im=await new Promise((res,rej)=>{const i=new Image();i.onload=()=>res(i);i.onerror=rej;i.src=url});
+  const c=document.createElement('canvas');c.width=im.naturalWidth;c.height=im.naturalHeight;c.getContext('2d').drawImage(im,0,0);URL.revokeObjectURL(url);return c}catch(e){return null}}
+const IMGTYPE={logo:'image/png',ad:'image/jpeg'};
+async function persistImg(key,c){markSaving();try{if(!c)await kv.del(key);else{const b=await blobOf(c,IMGTYPE[key]||'image/webp',.93);if(b)await kv.set(key,b)}}catch(e){}markSaved()}
+function persistSlots(){persistImg('img1',IMG);[2,3,4].forEach(n=>persistImg('img'+n,SLOT[n]))}
+function normS(){if(!S.hide||typeof S.hide!=='object')S.hide={};if(!Array.isArray(S.customs))S.customs=[];if(!S.sp||typeof S.sp!=='object')S.sp={};
+  if(!(S.size in SIZES)&&S.size!=='custom')S.size='4:5';if(!S.cardId)S.cardId=uid()}
+async function loadPersisted(){
+  const st=await kv.get('state');if(st&&typeof st==='object'){S=Object.assign({},DEF,st)}normS();
+  const g=async(k,ls)=>{let c=await blobCanvas(await kv.get(k));if(!c&&ls){const d=store.get(ls);if(d){c=await fromDataURL(d);if(c){await persistImg(k,c);store.del(ls)}}}return c};
+  IMG=await g('img1');for(const n of [2,3,4])SLOT[n]=await g('img'+n);LOGO=await g('logo','nc_logo');AD=await g('ad','nc_ad');
+  if(IMG||SLOT[2]||SLOT[3]||SLOT[4])reprocess(true);
+  try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist()}catch(e){}
+}
+
+/* ---- card history ("আমার কার্ড") ---- */
+const hasContent=()=>!!(plain(S.headline).trim()||IMG);
+async function cardThumb(){const[W,H]=dims();const tw=360,k=tw/W;const c=document.createElement('canvas');c.width=tw;c.height=Math.round(H*k);
+  const x=c.getContext('2d');x.setTransform(k,0,0,k,0,0);EXPORTING=true;drawCard(x,W,H,S.layout,k);EXPORTING=false;K=1;U=W/1080;return canvasBlob(c,'image/jpeg',.82)}
+let HSAVING=false;
+async function saveToHistory(silent){if(!hasContent()||HSAVING)return;HSAVING=true;markSaving();
+  try{if(!S.cardId)S.cardId=uid();const st=JSON.parse(JSON.stringify(S));delete st.customs;
+    const imgs={1:await blobOf(IMG)};for(const n of [2,3,4])imgs[n]=await blobOf(SLOT[n]);
+    await cardsDB.put({id:S.cardId,t:Date.now(),name:plain(S.headline).replace(/\s+/g,' ').trim().slice(0,90)||'শিরোনামহীন কার্ড',thumb:await cardThumb(),state:st,imgs});
+    const all=(await cardsDB.all())||[];if(all.length>40){all.sort((a,b)=>a.t-b.t);for(const c of all.slice(0,all.length-40))await cardsDB.del(c.id)}
+    drawHistory();if(!silent)toast('"আমার কার্ড"-এ সেভ হয়েছে ✓')}catch(e){}
+  HSAVING=false;markSaved()}
+async function openCard(id){const c=await cardsDB.get(id);if(!c)return;await saveToHistory(true);
+  const customs=S.customs;S=Object.assign({},DEF,c.state,{customs});normS();
+  IMG=await blobCanvas(c.imgs&&c.imgs[1]);for(const n of [2,3,4])SLOT[n]=await blobCanvas(c.imgs&&c.imgs[n]);IMGF=null;[2,3,4].forEach(n=>SLOTF[n]=null);
+  persistSlots();reprocess(true);if(S.layout>=LAY().length)S.layout=0;BSEL=null;loadFonts();changed();syncUI(true);renderBuilder();
+  $('.content').scrollTop=0;toast('কার্ড খোলা হয়েছে — এডিট করুন')}
+const HURLS=[];
+function ago(t){const s=(Date.now()-t)/1000;const f=n=>BN(Math.floor(n));if(s<60)return'এইমাত্র';if(s<3600)return f(s/60)+' মিনিট আগে';if(s<86400)return f(s/3600)+' ঘণ্টা আগে';if(s<86400*30)return f(s/86400)+' দিন আগে';
+  try{return new Intl.DateTimeFormat('bn-BD',{day:'numeric',month:'short'}).format(new Date(t))}catch(e){return''}}
+async function drawHistory(){const box=$('#hist');if(!box)return;HURLS.splice(0).forEach(u=>URL.revokeObjectURL(u));
+  const all=((await cardsDB.all())||[]).sort((a,b)=>b.t-a.t);box.innerHTML='';
+  if(!all.length){box.innerHTML='<div class="hint" style="grid-column:1/-1">এখনো কোনো কার্ড নেই। ডাউনলোড বা "নতুন" চাপলে আগের কার্ড এখানে জমা হবে।</div>';return}
+  all.forEach(c=>{const u=c.thumb?URL.createObjectURL(c.thumb):'';if(u)HURLS.push(u);
+    const it=E('div',{class:'hcard'+(c.id===S.cardId?' on':''),title:c.name},
+      E('button',{class:'hth',style:u?`background-image:url(${u})`:'',onclick:()=>openCard(c.id)}),
+      E('div',{class:'hnm'},c.name),E('div',{class:'hmeta'},c.id===S.cardId?'এখন খোলা':ago(c.t)),
+      E('button',{class:'hx',title:'মুছুন',html:ic('x',13),onclick:async()=>{await cardsDB.del(c.id);drawHistory();toast('কার্ড মুছে গেছে')}}));box.append(it)})}
+
+/* ---- PWA + APK ---- */
+const FRAMED=(()=>{try{return window.self!==window.top}catch(e){return true}})();
+const STANDALONE=(()=>{try{return matchMedia('(display-mode: standalone)').matches||document.referrer.startsWith('android-app://')||navigator.standalone===true}catch(e){return false}})();
+let BIP=null;
+function setupApp(){const card=$('#appCard');if(!card)return;
+  if(!FRAMED&&!STANDALONE&&location.protocol==='https:')card.style.display='block';
+  window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();BIP=e;const b=$('#pwaBtn');if(b&&!STANDALONE)b.style.display='flex'});
+  $('#pwaBtn').onclick=async()=>{if(!BIP)return;BIP.prompt();try{await BIP.userChoice}catch(e){}BIP=null;$('#pwaBtn').style.display='none'};
+  if('serviceWorker' in navigator&&!FRAMED&&location.protocol==='https:'){const reg=()=>navigator.serviceWorker.register('/sw.js').catch(()=>{});if(document.readyState==='complete')reg();else window.addEventListener('load',reg)}
+}
+
 /* ---------- render ---------- */
 const cv=$('#cv'),cx=cv.getContext('2d');
 function dims(){if(S.size==='custom'){return[clamp(parseInt(S.cw)||1080,320,4000),clamp(parseInt(S.ch)||1350,320,4000)]}return SIZES[S.size]||SIZES['4:5']}
@@ -1542,7 +1649,7 @@ let pt=0;function reprocess(now){clearTimeout(pt);const go=()=>{IMGF=processOne(
 /* ---------- history (undo/redo) ---------- */
 const HIST=[],FUT=[];let lastSnap=JSON.stringify(S),ht=0;
 function snap(){clearTimeout(ht);ht=setTimeout(()=>{const j=JSON.stringify(S);if(j!==lastSnap){HIST.push(lastSnap);if(HIST.length>100)HIST.shift();FUT.length=0;lastSnap=j;updUndo()}},450)}
-function restore(j){S=Object.assign({},DEF,JSON.parse(j));if(!S.hide)S.hide={};if(!S.customs)S.customs=[];if(!S.sp)S.sp={};if(S.layout>=LAY().length)S.layout=0;setTimeout(renderBuilder,0);lastSnap=j;saveState();loadFonts();reprocess(true);syncUI(true);schedule();updUndo()}
+function restore(j){S=Object.assign({},DEF,JSON.parse(j));normS();if(S.layout>=LAY().length)S.layout=0;setTimeout(renderBuilder,0);lastSnap=j;saveState();loadFonts();reprocess(true);syncUI(true);schedule();updUndo()}
 function undo(){clearTimeout(ht);const cur=JSON.stringify(S);if(cur!==lastSnap){HIST.push(lastSnap);lastSnap=cur}if(!HIST.length)return;FUT.push(lastSnap);restore(HIST.pop());toast('আনডু')}
 function redo(){if(!FUT.length)return;HIST.push(lastSnap);restore(FUT.pop());toast('রিডু')}
 function updUndo(){$('#undo').disabled=!HIST.length;$('#redo').disabled=!FUT.length}
@@ -1614,18 +1721,18 @@ function loadImage(file,maxSide){return new Promise((res,rej)=>{const url=URL.cr
   im.onload=()=>{const s=Math.min(1,maxSide/Math.max(im.width,im.height));const c=document.createElement('canvas');c.width=Math.round(im.width*s);c.height=Math.round(im.height*s);c.getContext('2d').drawImage(im,0,0,c.width,c.height);URL.revokeObjectURL(url);res(c)};
   im.onerror=()=>{URL.revokeObjectURL(url);rej(new Error('img'))};im.src=url})}
 function fromDataURL(d){return new Promise(res=>{if(!d)return res(null);const im=new Image();im.onload=()=>{const c=document.createElement('canvas');c.width=im.width;c.height=im.height;c.getContext('2d').drawImage(im,0,0);res(c)};im.onerror=()=>res(null);im.src=d})}
-async function setMain(file){if(!file||!file.type.startsWith('image/'))return;try{IMG=await loadImage(file,2400);S.zoom=1;S.ox=0;S.oy=0;reprocess(true);changed();toast('ছবি যোগ হয়েছে ✓')}catch(e){toast('ছবি খোলা যায়নি')}}
+async function setMain(file){if(!file||!file.type.startsWith('image/'))return;try{IMG=await loadImage(file,2400);S.zoom=1;S.ox=0;S.oy=0;reprocess(true);changed();persistImg('img1',IMG);toast('ছবি যোগ হয়েছে ✓')}catch(e){toast('ছবি খোলা যায়নি')}}
 $('#imgFile').onchange=e=>{setMain(e.target.files[0]);e.target.value=''};
 $('#imgReset').onclick=()=>{S.zoom=1;S.ox=0;S.oy=0;changed()};
-$('#imgClear').onclick=()=>{IMG=null;IMGF=null;changed()};
-async function setSlot(n,f){if(n===1)return setMain(f);try{SLOT[n]=await loadImage(f,2000);S.sp[n]={zoom:1,ox:0,oy:0};reprocess(true);changed();toast('ছবি '+'০১২৩৪'[n]+' যোগ হয়েছে ✓')}catch(er){toast('ছবি খোলা যায়নি')}}
+$('#imgClear').onclick=()=>{IMG=null;IMGF=null;changed();persistImg('img1',null)};
+async function setSlot(n,f){if(n===1)return setMain(f);try{SLOT[n]=await loadImage(f,2000);S.sp[n]={zoom:1,ox:0,oy:0};reprocess(true);changed();persistImg('img'+n,SLOT[n]);toast('ছবি '+'০১২৩৪'[n]+' যোগ হয়েছে ✓')}catch(er){toast('ছবি খোলা যায়নি')}}
 function drawSlots(){const box=$('#slots');if(!box)return;box.innerHTML='';[2,3,4].forEach(n=>{const src=SLOT[n];const fi=document.createElement('input');fi.type='file';fi.accept='image/*';fi.style.display='none';fi.onchange=()=>{if(fi.files[0])setSlot(n,fi.files[0])};
   const lab=document.createElement('label');lab.className='slot big';lab.innerHTML=`<span class="th" style="${src?`background-image:url(${thumbURL(src)})`:''}">${src?'':ic('plus',20)}</span>ছবি ${'০১২৩৪'[n]}`;lab.prepend(fi);
-  const wrap=document.createElement('div');wrap.className='slotw';wrap.append(lab);if(src){const x=document.createElement('button');x.className='sx';x.innerHTML=ic('x',13);x.onclick=()=>{SLOT[n]=null;SLOTF[n]=null;changed()};wrap.append(x)}box.append(wrap)})}
-$('#logoFile').onchange=async e=>{const f=e.target.files[0];e.target.value='';if(!f)return;LOGO=await loadImage(f,900);store.set('nc_logo',LOGO.toDataURL('image/png'));changed()};
-$('#logoClear').onclick=()=>{LOGO=null;store.del('nc_logo');changed()};
-$('#adFile').onchange=async e=>{const f=e.target.files[0];e.target.value='';if(!f)return;AD=await loadImage(f,2160);S.showAd=true;if(!store.set('nc_ad',AD.toDataURL('image/jpeg',.88)))toast('ব্যানার বড়, ব্রাউজারে সেভ হয়নি');changed()};
-$('#adClear').onclick=()=>{AD=null;store.del('nc_ad');changed()};
+  const wrap=document.createElement('div');wrap.className='slotw';wrap.append(lab);if(src){const x=document.createElement('button');x.className='sx';x.innerHTML=ic('x',13);x.onclick=()=>{SLOT[n]=null;SLOTF[n]=null;persistImg('img'+n,null);changed()};wrap.append(x)}box.append(wrap)})}
+$('#logoFile').onchange=async e=>{const f=e.target.files[0];e.target.value='';if(!f)return;LOGO=await loadImage(f,900);persistImg('logo',LOGO);changed()};
+$('#logoClear').onclick=()=>{LOGO=null;persistImg('logo',null);changed()};
+$('#adFile').onchange=async e=>{const f=e.target.files[0];e.target.value='';if(!f)return;AD=await loadImage(f,2160);S.showAd=true;persistImg('ad',AD);changed()};
+$('#adClear').onclick=()=>{AD=null;persistImg('ad',null);changed()};
 window.addEventListener('paste',e=>{const items=[...((e.clipboardData||{}).items||[])];const it=items.find(i=>i.type&&i.type.startsWith('image/'));if(it){e.preventDefault();setMain(it.getAsFile())}});
 window.addEventListener('dragover',e=>e.preventDefault());
 window.addEventListener('drop',e=>{e.preventDefault();const files=[...((e.dataTransfer||{}).files||[])];
@@ -1715,7 +1822,7 @@ async function download(){
   if(sc>1){out=document.createElement('canvas');out.width=Math.round(W*sc);out.height=Math.round(H*sc);const x=out.getContext('2d');x.setTransform(sc,0,0,sc,0,0);EXPORTING=true;drawCard(x,W,H,S.layout,sc);EXPORTING=false;K=1;U=W/1080}
   else{EXPORTING=true;render();EXPORTING=false}
   const ext=S.fmt==='jpg'?'jpg':S.fmt==='webp'?'webp':'png';
-  const blob=await new Promise(r=>out.toBlob(r,ext==='jpg'?'image/jpeg':ext==='webp'?'image/webp':'image/png',0.95));render();
+  const blob=await new Promise(r=>out.toBlob(r,ext==='jpg'?'image/jpeg':ext==='webp'?'image/webp':'image/png',0.95));render();setTimeout(()=>saveToHistory(true),300);
   const now=new Date(),pad=n=>String(n).padStart(2,'0');
   const name=`newscard-${S.layout+1}-${now.getFullYear()}${pad(now.getMonth()+1)}${pad(now.getDate())}-${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}.${ext}`;
   const dl=await getDL();
@@ -1726,8 +1833,8 @@ async function download(){
 }
 $('#dl').onclick=download;
 $('#modalClose').onclick=()=>$('#modal').classList.remove('on');
-$('#newc').onclick=()=>{S.headline='';IMG=null;IMGF=null;[2,3,4].forEach(n=>{SLOT[n]=null;SLOTF[n]=null});S.zoom=1;S.ox=0;S.oy=0;S.date=bnDate();changed();syncUI(true);
-  $$('#tabs button')[0].click();$('#headline').focus();toast('নতুন কার্ড — স্টাইল ও লোগো আগের মতো আছে')};
+$('#newc').onclick=async()=>{await saveToHistory(true);S.cardId=uid();S.headline='';IMG=null;IMGF=null;[2,3,4].forEach(n=>{SLOT[n]=null;SLOTF[n]=null});S.zoom=1;S.ox=0;S.oy=0;S.sp={};S.date=bnDate();persistSlots();changed();syncUI(true);drawHistory();
+  $$('#tabs button')[0].click();$('#headline').focus();toast('আগের কার্ড "আমার কার্ড"-এ রাখা হয়েছে — নতুন কার্ড শুরু')};
 window.addEventListener('keydown',e=>{
   const mod=e.ctrlKey||e.metaKey,key=(e.key||'').toLowerCase();
   if(mod&&key==='s'){e.preventDefault();download();return}
@@ -1750,7 +1857,7 @@ function drawPresets(){const box=$('#presets');const a=getPresets();
   b.innerHTML=`<i class="d"></i>${esc(p.name)}<span data-x title="মুছুন" style="display:inline-grid;margin-left:2px;color:var(--mut)">${ic('x',14)}</span>`;
   b.onclick=async ev=>{if(ev.target.closest('[data-x]')){const a=getPresets();a.splice(i,1);store.set('nc_presets',JSON.stringify(a));drawPresets();return}
     PKEYS.forEach(k=>{if(k in p.s)S[k]=p.s[k]});if(!S.hide)S.hide={};LOGO=await fromDataURL(p.logo);AD=await fromDataURL(p.ad);
-    if(LOGO)store.set('nc_logo',p.logo);else store.del('nc_logo');if(AD)store.set('nc_ad',p.ad);else store.del('nc_ad');
+    persistImg('logo',LOGO);persistImg('ad',AD);
     loadFonts();changed();syncUI(true);toast(`"${p.name}" প্রয়োগ হয়েছে`)};box.appendChild(b)})}
 $('#presetOk').onclick=()=>{const name=$('#presetName').value.trim()||('প্রিসেট '+(getPresets().length+1));const s={};PKEYS.forEach(k=>s[k]=S[k]);
   const a=getPresets().filter(p=>p.name!==name);a.push({name,s,logo:LOGO?LOGO.toDataURL('image/png'):null,ad:AD?AD.toDataURL('image/jpeg',.85):null});
@@ -1768,11 +1875,11 @@ function loadFonts(){
 if(document.fonts){document.fonts.onloadingdone=()=>{schedule()}}
 
 (async function init(){
+  await loadPersisted();
   if(S.layout>=LAY().length)S.layout=0;
   buildThumbs();buildRanges();buildSegs();buildVis();
   const tab=store.get('nc_tab');if(tab){const b=$(`#tabs button[data-tab="${tab}"]`);if(b)b.click()}
-  LOGO=await fromDataURL(store.get('nc_logo'));AD=await fromDataURL(store.get('nc_ad'));
-  syncUI(true);render();renderThumbs();updUndo();drawPresets();renderBuilder();
+  syncUI(true);render();renderThumbs();updUndo();drawPresets();renderBuilder();drawHistory();setupApp();$('#histSave').onclick=()=>saveToHistory(false);
   window.addEventListener('resize',()=>drawOverlay());
   await loadMyFonts();loadFonts();lastSnap=JSON.stringify(S);
   if(!store.get('nc_helped'))$('#help').classList.add('on');

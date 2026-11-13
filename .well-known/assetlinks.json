@@ -1,0 +1,8 @@
+[{
+  "relation": ["delegate_permission/common.handle_all_urls"],
+  "target": {
+    "namespace": "android_app",
+    "package_name": "com.fahimalsifat.newscard",
+    "sha256_cert_fingerprints": ["AF:4C:3F:6F:FF:09:1E:67:2F:36:5B:1D:09:BF:E0:32:42:63:69:CD:8F:7A:69:FE:96:A2:05:19:6B:59:D3:23"]
+  }
+}]

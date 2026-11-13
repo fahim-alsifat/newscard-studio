@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="launch_url">https://newscard-studio-tau.vercel.app/</string>
+    <string name="host_name">newscard-studio-tau.vercel.app</string>
+    <string name="provider_authority">com.fahimalsifat.newscard.fileprovider</string>
+    <string name="asset_statements">[{ \"relation\": [\"delegate_permission/common.handle_all_urls\"], \"target\": { \"namespace\": \"web\", \"site\": \"https://newscard-studio-tau.vercel.app\" } }]</string>
+</resources>
