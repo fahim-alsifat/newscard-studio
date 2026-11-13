@@ -277,6 +277,11 @@ textarea{font-family:inherit}
 .hcard .hmeta{font-size:10.5px;color:var(--mut)}
 .hcard .hx{position:absolute;top:-6px;right:-6px;width:24px;height:24px;border-radius:50%;background:var(--s4);border:1px solid var(--ln2);display:grid;place-items:center;color:var(--tx)}
 @media (max-width:900px){.savechip{top:8px;right:8px;font-size:10.5px;padding:4px 9px 4px 8px}}
+.csw.auto{background:var(--s3);color:var(--tx);font-size:10px;font-weight:700;width:auto;padding:0 10px;border-radius:999px}
+.xth{display:inline-block;width:26px;height:26px;border-radius:7px;background:#0b0d11 center/cover no-repeat;border:1px solid var(--ln2);flex:none}
+.xth.sm{width:24px;height:24px}
+.layer.fixed{cursor:default;background:var(--s3);border-style:dashed}
+.layer.fixed .nm{color:var(--mut)}
 </style>
 </head>
 <body>
@@ -324,6 +329,10 @@ textarea{font-family:inherit}
         <div class="hint">শব্দ সিলেক্ট করে "রঙ ১" চাপুন, অথবা লিখুন <b>*শব্দ*</b> (রঙ ১) / <b>[শব্দ]</b> (রঙ ২)। Enter দিলে নতুন লাইন।</div>
       </div>
       <div class="card">
+        <h4>শিরোনামের জায়গা <span class="hint">উপরে-নিচে-ডানে-বামে</span></h4>
+        <div id="headPos"></div>
+      </div>
+      <div class="card">
         <h4>অন্যান্য লেখা</h4>
         <div class="row">
           <label class="f"><span>ট্যাগ / ক্যাটাগরি</span><input type="text" data-k="tag" placeholder="ব্রেকিং / খেলা"></label>
@@ -361,6 +370,7 @@ textarea{font-family:inherit}
 
     <section class="tab" data-tab="image">
       <label class="drop"><input type="file" accept="image/*" id="imgFile"><div class="ic" data-ic="image"></div><b>মূল ছবি বাছুন</b>অথবা টেনে আনুন / Ctrl+V দিয়ে পেস্ট করুন</label>
+      <div id="extras"></div>
       <div class="card">
         <h4>পজিশন ও জুম <span style="display:flex;gap:6px"><button class="sbtn" id="imgReset">রিসেট</button><button class="sbtn" id="imgClear">সরান</button></span></h4>
         <div data-r="zoom"></div><div data-r="ox"></div><div data-r="oy"></div>
@@ -455,6 +465,10 @@ textarea{font-family:inherit}
         </div>
         <div data-r="logoScale"></div>
         <p class="hint" style="margin:4px 0 0">লোগো ছবি দিলে লেখার বদলে ছবিটা দেখাবে। স্বচ্ছ (transparent) PNG সবচেয়ে ভালো।</p>
+      </div>
+      <div class="card">
+        <h4>লোগো লেখার রং <span class="hint">দুই লাইন আলাদা</span></h4>
+        <div id="brandColors"></div>
       </div>
       <div class="card">
         <h4>নিচের বিজ্ঞাপন ব্যানার</h4>
@@ -623,8 +637,8 @@ const DEF={layout:0,size:'4:5',
   scale:1,lhm:1,track:0,wsp:1,bscale:1,btrack:0,upper:true,
   overlay:1,grain:.3,vig:.25,border:0,logoScale:1,
   pBright:1,pContrast:1,pSat:1,pBlur:0,pBw:false,pFlip:false,
-  hide:{},customs:[],sp:{},cardId:'',cw:'1080',ch:'1350',res:'1',zoom:1,ox:0,oy:0,showAd:true,fmt:'png'};
-const STYLE_KEYS=['bg','text','acc','acc2','fontHead','fontBody','weight','mark','align','hfx','scale','lhm','track','wsp','bscale','btrack','upper','overlay','grain','vig','border','logoScale'];
+  hide:{},customs:[],sp:{},extras:[],hdx:0,hdy:0,brandC1:'',brandC2:'',cardId:'',cw:'1080',ch:'1350',res:'1',zoom:1,ox:0,oy:0,showAd:true,fmt:'png'};
+const STYLE_KEYS=['brandC1','brandC2','hdx','hdy','bg','text','acc','acc2','fontHead','fontBody','weight','mark','align','hfx','scale','lhm','track','wsp','bscale','btrack','upper','overlay','grain','vig','border','logoScale'];
 let S=Object.assign({},DEF);
 let IMG=null,IMGF=null,SLOT={2:null,3:null,4:null},SLOTF={2:null,3:null,4:null},LOGO=null,AD=null,K=1,U=1,EXPORTING=false,T={};
 
@@ -740,6 +754,9 @@ function drawText(ctx,L,x,y,o={}){
       cx+=L.sp;
     }
   });
+  if(L.isHead&&MAINDRAW&&PASS!=='bg'&&L.lines.length){const xs=L.lines.map(ln=>align==='center'?x-ln.w/2:align==='right'?x-ln.w:x);
+    const x0=Math.min(...xs),x1=Math.max(...L.lines.map((ln,i)=>xs[i]+ln.w));const m=ctx.getTransform();const P=(px,py)=>[m.a*px+m.c*py+m.e,m.b*px+m.d*py+m.f];
+    const pts=[P(x0,y),P(x1,y),P(x0,y+L.height),P(x1,y+L.height)];HLR={x0:Math.min(...pts.map(p=>p[0])),x1:Math.max(...pts.map(p=>p[0])),y0:Math.min(...pts.map(p=>p[1])),y1:Math.max(...pts.map(p=>p[1]))}}
   ctx.restore();
 }
 function hfit(c,w,h,o={}){
@@ -747,12 +764,14 @@ function hfit(c,w,h,o={}){
   const toks=tokenize(S.upper&&!o.noUpper?text.toUpperCase():text);
   const bn=/[ঀ-৿]/.test(text);
   const lh=(o.lh||(bn?1.2:1.04))*S.lhm;
-  return fitText(c.ctx,toks,{font:o.font||(s=>HF(s)),maxW:Math.max(10,w),maxH:Math.max(10,h),max:(o.max||110)*c.u*S.scale,min:(o.min||18)*c.u,lh,balance:o.balance!==false});
+  const L=fitText(c.ctx,toks,{font:o.font||(s=>HF(s)),maxW:Math.max(10,w),maxH:Math.max(10,h),max:(o.max||110)*c.u*S.scale,min:(o.min||18)*c.u,lh,balance:o.balance!==false});
+  L.isHead=true;return L;
 }
 function hl(c,box,o={}){
   const L=hfit(c,box.w,box.h,o);
   let y=box.y;if(o.valign==='middle')y=box.y+(box.h-L.height)/2;else if(o.valign==='bottom')y=box.y+box.h-L.height;
   const a=AX(box.x,box.w,o.align||'left');
+  if(OFFON){y+=(S.hdy||0)*c.H;a.x+=(S.hdx||0)*c.W}
   drawText(c.ctx,L,a.x,y,Object.assign({},o,{align:a.al}));
   return{top:y,bottom:y+L.height,L,al:a.al};
 }
@@ -820,7 +839,7 @@ function brand(c,x,y,h,o={}){
   const two=!!(b1&&b2),sz=two?h*0.5:h*0.62;
   ctx.save();ctx.font=`800 ${sz}px "Inter","Anek Bangla",sans-serif`;ctx.textAlign=al;ctx.textBaseline='alphabetic';setTrack(ctx,-sz*0.045);
   if(o.shadow){ctx.shadowColor='rgba(0,0,0,.5)';ctx.shadowBlur=12*K}
-  const c1=o.c1||S.text,c2=o.c2||S.acc;
+  const c1=S.brandC1?colOf(S.brandC1):(o.c1||S.text),c2=S.brandC2?colOf(S.brandC2):(o.c2||S.acc);
   if(two){ctx.fillStyle=c1;ctx.fillText(b1,x,y+sz*0.86);ctx.fillStyle=c2;ctx.fillText(b2,x,y+sz*1.74)}
   else{ctx.fillStyle=c1;ctx.fillText(b1||b2,x,y+sz*0.9)}
   const w=Math.max(ctx.measureText(b1).width,ctx.measureText(b2).width);ctx.restore();return w;
@@ -835,7 +854,7 @@ function brandInline(c,x,y,size,o={}){
   if(o.maxW&&w1+w2>o.maxW){sz*=o.maxW/(w1+w2);ctx.font=f(sz);setTrack(ctx,-sz*0.05);w1=ctx.measureText(b1).width;w2=ctx.measureText(b2).width}
   ctx.textBaseline='middle';ctx.textAlign='left';
   if(o.shadow){ctx.shadowColor='rgba(0,0,0,.45)';ctx.shadowBlur=16*K}
-  const lx=x-(w1+w2)/2;ctx.fillStyle=o.c1||S.text;ctx.fillText(b1,lx,y);ctx.fillStyle=o.c2||S.acc;ctx.fillText(b2,lx+w1,y);
+  const lx=x-(w1+w2)/2;ctx.fillStyle=S.brandC1?colOf(S.brandC1):(o.c1||S.text);ctx.fillText(b1,lx,y);ctx.fillStyle=S.brandC2?colOf(S.brandC2):(o.c2||S.acc);ctx.fillText(b2,lx+w1,y);
   ctx.restore();
 }
 function cover(c,x,y,w,h,o={}){
@@ -938,7 +957,7 @@ const BUILTIN=[
   if(T.credit)txt(c,T.credit,W-p,p+24*u,{size:21,align:'right',color:W_,shadow:true,maxW:W*0.5});
   const right=T.handle||T.sub;const strip=(T.date||right)?62*u:0;
   const L=hfit(c,W-2*m-2*pd-14*u,H*0.32,{max:86,balance:false});
-  const bh=L.height+2*pd,by=H-m-strip-bh;
+  const bh=L.height+2*pd,by=H-m-strip-bh;const O=hoff(c);ctx.save();ctx.translate(O.x,O.y);
   ctx.save();ctx.shadowColor='rgba(0,0,0,.4)';ctx.shadowBlur=50*K;ctx.shadowOffsetY=18*K;ctx.fillStyle='#ffffff';ctx.fillRect(m,by,W-2*m,bh+strip);ctx.restore();
   ctx.fillStyle='#ffffff';ctx.fillRect(m,by,W-2*m,bh);ctx.fillStyle=S.acc;ctx.fillRect(m,by,12*u,bh);
   {const a=AX(m+pd+14*u,W-2*m-2*pd-14*u,'left');drawText(ctx,L,a.x,by+pd,{align:a.al,colors:['#111111',onLight(S.acc),onLight(S.acc2)],fx:false});}
@@ -949,6 +968,7 @@ const BUILTIN=[
   if(strip){ctx.fillStyle='#101114';ctx.fillRect(m,by+bh,W-2*m,strip);
     txt(c,T.date,m+pd,by+bh+strip/2,{size:21,weight:600,color:'#ffffff',maxW:W*0.4});
     if(right)txt(c,right,W-m-pd,by+bh+strip/2,{size:21,color:'#b9bec8',align:'right',maxW:W*0.45});}
+  ctx.restore();
 }},
 {name:'ফটো কার্ড',draw(c){const{ctx,W,H,u}=c,p=64*u;
   blobs(c,[[0.08,0.02,0.55,S.acc,.16],[0.98,0.98,0.55,S.acc2,.12]]);
@@ -1024,9 +1044,11 @@ const BUILTIN=[
   if(T.credit)txt(c,T.credit,W-p,p+24*u,{size:21,align:'right',color:W_,shadow:true,maxW:W*0.5});
   const L=hfit(c,W-2*p-70*u,H*0.42,{max:80,lh:1.46});
   const bot=H-p-(T.sub?84*u:0)-(T.byline||T.handle?56*u:0);const y=bot-L.height;
+  const O=hoff(c);ctx.save();ctx.translate(O.x,O.y);
   const a=AX(p+35*u,W-2*p-70*u,'center');drawText(ctx,L,a.x,y,{align:a.al,box:'#ffffff',colors:['#111111',onLight(S.acc),onLight(S.acc2)],mark:S.mark==='color'?'color':S.mark,fx:false});
   if(T.tag)pill(c,T.tag,a.al==='center'?W/2:a.al==='right'?W-p-20*u:p+20*u,y-52*u,{align:a.al==='center'?'center':a.al==='right'?'right':'left',size:22,dot:true});
   if(T.sub)cta(c,T.sub,W/2,bot+48*u,{align:'center',size:23,color:W_,border:'rgba(255,255,255,.45)',fill:'rgba(0,0,0,.25)'});
+  ctx.restore();
   if(T.byline||T.handle)footer(c,H-p+10*u,{color:W_,shadow:true,size:23});
 }},
 {name:'ডায়াগোনাল',draw(c){const{ctx,W,H,u}=c,p=64*u;
@@ -1081,13 +1103,14 @@ const BUILTIN=[
   if(T.credit)txt(c,T.credit,W-p,p+88*u,{size:19,align:'right',color:W_,shadow:true,maxW:W*0.5});
   const tk=68*u,pd=28*u;
   const L=hfit(c,W-2*p-2*pd,H*0.24,{max:68,balance:false});
-  const bh=L.height+2*pd,by=H-tk-bh;
+  const bh=L.height+2*pd,by=H-tk-bh;const O=hoff(c);ctx.save();ctx.translate(O.x,O.y);
   fade(c,by-320*u,by,'#000000',0,ov(.5));
   ctx.save();ctx.shadowColor='rgba(0,0,0,.35)';ctx.shadowBlur=30*K;ctx.fillStyle='#ffffff';ctx.fillRect(0,by,W,bh);ctx.restore();
   {const a=AX(p+pd,W-2*p-2*pd,'left');drawText(ctx,L,a.x,by+pd,{align:a.al,colors:['#111111',onLight(S.acc),onLight(S.acc2)],fx:false});}
   const lab=plain(T.tag||'ব্রেকিং নিউজ');const lt=S.upper?lab.toUpperCase():lab;ctx.save();const ls=28*u*S.bscale;ctx.font=HF(ls,800);const lw=ctx.measureText(lt).width+ls*2;ctx.restore();
   ctx.fillStyle=S.acc;ctx.fillRect(p,by-ls*2,lw,ls*2);
   txt(c,lt,p+ls,by-ls,{size:28*S.bscale,head:true,weight:800,color:contrast(S.acc)});
+  ctx.restore();
   ctx.fillStyle='#0e0f12';ctx.fillRect(0,H-tk,W,tk);
   ctx.save();ctx.font=BF(22*u*S.bscale,700);const dw=(T.date?ctx.measureText(plain(T.date)).width:0)+48*u;ctx.restore();
   ctx.fillStyle=S.acc2;ctx.fillRect(0,H-tk,dw,tk);
@@ -1157,7 +1180,7 @@ const BUILTIN=[
   const L=hfit(c,tw,H*0.28,{max:56,font:s=>BF(s,600),balance:false,noUpper:true,lh:1.34});
   const fixed=ip+96*u+30*u+L.height+30*u+30*u+46*u+ip;
   let phH=Math.min(tw*0.9,H-2*m-fixed);if(phH<140*u)phH=0;
-  const chh=fixed+phH,cy=(H-chh)/2,cx=m;
+  const chh=fixed+phH,cy=(H-chh)/2,cx=m;const O=hoff(c);ctx.save();ctx.translate(O.x,O.y);
   const light=lum(S.bg)>0.5;const cardBg=light?'#ffffff':mix(S.bg,'#ffffff',.06);
   ctx.save();ctx.shadowColor='rgba(0,0,0,.4)';ctx.shadowBlur=50*K;ctx.shadowOffsetY=18*K;ctx.fillStyle=cardBg;rr(ctx,cx,cy,cw,chh,36*u);ctx.fill();ctx.restore();
   ctx.save();ctx.strokeStyle=light?'rgba(0,0,0,.08)':'rgba(255,255,255,.1)';ctx.lineWidth=1.5*u;rr(ctx,cx,cy,cw,chh,36*u);ctx.stroke();ctx.restore();
@@ -1179,6 +1202,7 @@ const BUILTIN=[
   y+=30*u;ctx.fillStyle=hexA(tc,.1);ctx.fillRect(ax,y,tw,2*u);
   txt(c,T.date,ax,y+38*u,{size:21,color:hexA(tc,.55),maxW:tw*0.45});
   if(T.credit)txt(c,T.credit,ax+tw,y+38*u,{size:19,align:'right',color:hexA(tc,.5),maxW:tw*0.5});
+  ctx.restore();
 }},
 {name:'ভার্সাস',draw(c){const{ctx,W,H,u}=c,p=64*u;
   const s=70*u,mid=W/2;
@@ -1328,7 +1352,7 @@ function drawBlock(c,b){const{ctx,W,H,u}=c;const x=b.x*W,y=b.y*H,w=b.w*W,h=b.h*H
 /* ---------- overlay & canvas interaction ---------- */
 const ovc=$('#ov'),oc=ovc.getContext('2d');
 function drawOverlay(){const[W,H]=dims();if(ovc.width!==W||ovc.height!==H){ovc.width=W;ovc.height=H}oc.clearRect(0,0,W,H);
-  if(!isBuilding())return;const t=curTpl(),[,CH]=cardDims();const rect=cv.getBoundingClientRect();const sc=rect.width?W/rect.width:1;
+  if(!isBuilding()){drawNormalOverlay();return}const t=curTpl(),[,CH]=cardDims();const rect=cv.getBoundingClientRect();const sc=rect.width?W/rect.width:1;
   oc.save();oc.setLineDash([6*sc,5*sc]);oc.lineWidth=1*sc;oc.strokeStyle='rgba(255,255,255,.28)';
   t.blocks.forEach(b=>{if(b.hidden||b.id===BSEL)return;oc.strokeRect(b.x*W,b.y*CH,b.w*W,b.h*CH)});oc.restore();
   if(BGRID){oc.save();oc.strokeStyle='rgba(255,255,255,.22)';oc.lineWidth=1*sc;[1/3,2/3].forEach(f=>{oc.beginPath();oc.moveTo(W*f,0);oc.lineTo(W*f,CH);oc.moveTo(0,CH*f);oc.lineTo(W,CH*f);oc.stroke()});
@@ -1371,7 +1395,7 @@ function E(tag,props={},...kids){const e=document.createElement(tag);for(const[k
   for(const k of kids.flat()){if(k==null||k===false)continue;e.append(k.nodeType?k:document.createTextNode(String(k)))}return e}
 const ICO=(n,s)=>E('span',{html:ic(n,s||16),style:'display:inline-grid'});
 const F=(label,...kids)=>E('div',{class:'f'},E('span',{class:'fl'},label),...kids);
-const edit=(fn,rebuild)=>{fn();onEdit();drawOverlay();if(rebuild)renderBuilder()};
+const edit=(fn,rebuild)=>{fn();onEdit();drawOverlay();if(rebuild)rebuildPanels()};
 function bRange(label,b,key,min,max,step,fmt,after){fmt=fmt||(v=>v);const v0=b[key]??min;const val=E('b',{},fmt(v0));const inp=E('input',{type:'range',min,max,step});inp.value=v0;
   const setP=()=>inp.style.setProperty('--p',((inp.value-min)/(max-min)*100)+'%');setP();
   inp.oninput=()=>{b[key]=parseFloat(inp.value);val.textContent=fmt(b[key]);setP();if(after)after();onEdit();drawOverlay()};
@@ -1386,7 +1410,7 @@ function bSeg(label,b,key,opts,rebuild){const s=E('div',{class:'seg'});opts.forE
 function bSwitch(label,b,key,rebuild){const i=E('input',{type:'checkbox'});i.checked=!!b[key];i.onchange=()=>edit(()=>{b[key]=i.checked},rebuild);return E('label',{class:'switch'},label,i)}
 function bColor(label,b,key,clear){const row=E('div',{class:'cpick'});const keys=['text','acc','acc2','bg','white','black'].concat(clear?['clear']:[]);
   keys.forEach(k=>{const sw=E('button',{class:'csw'+(b[key]===k?' on':''),title:COLS[k],onclick:()=>edit(()=>{b[key]=k},true)});sw.style.background=k==='clear'?'repeating-conic-gradient(#777 0 25%,#333 0 50%) 0 0/10px 10px':colOf(k);row.append(sw)});
-  const ci=E('input',{type:'color',class:'csw'+(String(b[key]||'')[0]==='#'?' on':''),title:'নিজের রং'});ci.value=String(b[key]||'')[0]==='#'?b[key]:'#ff3d7f';ci.oninput=()=>{b[key]=ci.value;onEdit()};ci.onchange=()=>renderBuilder();row.append(ci);
+  const ci=E('input',{type:'color',class:'csw'+(String(b[key]||'')[0]==='#'?' on':''),title:'নিজের রং'});ci.value=String(b[key]||'')[0]==='#'?b[key]:'#ff3d7f';ci.oninput=()=>{b[key]=ci.value;onEdit()};ci.onchange=()=>rebuildPanels();row.append(ci);
   return F(label,row)}
 const pct=v=>Math.round(v*100)+'%',deg=v=>Math.round(v)+'°',px_=v=>Math.round(v)+'px';
 function pos9(b){const g=E('div',{class:'pos9'});const[W,CH]=cardDims();const mx=.06,my=.06*W/CH;
@@ -1509,6 +1533,148 @@ function renderBuilder(){const root=$('#builder');if(!root)return;root.innerHTML
   drawOverlay();
 }
 
+/* ================= LAYERS: text / background split, EXTRA IMAGES, HEADLINE MOVE ================= */
+let PASS=null,TD=0,MAINDRAW=false,HLR=null,OFFON=true,XSEL=null,XD=null,TAP=null;
+const XIMG={};
+const DRAWOPS=new Set(['fill','stroke','fillRect','strokeRect','fillText','strokeText','drawImage','putImageData','clearRect']);
+function passCtx(ctx){if(ctx.__pp)return ctx.__pp;const p=new Proxy(ctx,{
+  get(t,k){const v=t[k];if(typeof v==='function'){if(DRAWOPS.has(k))return(...a)=>{if(PASS&&((PASS==='bg')===(TD>0)))return;return v.apply(t,a)};return v.bind(t)}return v},
+  set(t,k,v){t[k]=v;return true}});ctx.__pp=p;return p}
+['drawText','txt','pill','kicker','cta','brand','brandInline'].forEach(n=>{const o=window[n];window[n]=function(...a){TD++;try{return o.apply(this,a)}finally{TD--}}});
+const hoff=c=>OFFON?{x:(S.hdx||0)*c.W,y:(S.hdy||0)*c.H}:{x:0,y:0};
+
+function drawExtra(c,e){const{ctx,W,H,u}=c;const im=XIMG[e.id];if(!im)return;
+  const x=e.x*W,y=e.y*H,w=e.w*W,h=e.h*H;ctx.save();
+  if(e.op!=null&&e.op<1)ctx.globalAlpha=Math.max(0,e.op);
+  if(e.rot){ctx.translate(x+w/2,y+h/2);ctx.rotate(e.rot*Math.PI/180);ctx.translate(-(x+w/2),-(y+h/2))}
+  if(e.flip){ctx.translate(x+w/2,0);ctx.scale(-1,1);ctx.translate(-(x+w/2),0)}
+  const shaped=e.circle||e.r>0;
+  const path=()=>{if(e.circle){ctx.beginPath();ctx.ellipse(x+w/2,y+h/2,Math.abs(w/2),Math.abs(h/2),0,0,Math.PI*2)}else rr(ctx,x,y,w,h,(e.r||0)*u)};
+  const s=Math.max(w/im.width,h/im.height),dw=im.width*s,dh=im.height*s,dx=x+(w-dw)/2,dy=y+(h-dh)/2;
+  if(!shaped){ctx.save();ctx.beginPath();ctx.rect(x,y,w,h);ctx.clip();if(e.shadow){ctx.restore();ctx.save();ctx.shadowColor='rgba(0,0,0,.45)';ctx.shadowBlur=36*K;ctx.shadowOffsetY=12*K}ctx.drawImage(im,dx,dy,dw,dh);ctx.restore()}
+  else{if(e.shadow){ctx.save();ctx.shadowColor='rgba(0,0,0,.45)';ctx.shadowBlur=36*K;ctx.shadowOffsetY=12*K;ctx.fillStyle='#000';path();ctx.fill();ctx.restore()}
+    ctx.save();path();ctx.clip();ctx.drawImage(im,dx,dy,dw,dh);ctx.restore()}
+  if(e.bord>0){ctx.lineWidth=e.bord*u;ctx.strokeStyle=colOf(e.bordC||'white');if(shaped)path();else{ctx.beginPath();ctx.rect(x,y,w,h)}ctx.stroke()}
+  ctx.restore()}
+
+/* ---- extras data ---- */
+const selExtra=()=>(S.extras||[]).find(e=>e.id===XSEL)||null;
+function fitExtraBox(e){const[W,CH]=cardDims();const ar=e.circle?1:(e.ar||1);const cx=e.x+e.w/2,cy=e.y+e.h/2;e.h=e.w*W/ar/CH;e.x=cx-e.w/2;e.y=cy-e.h/2}
+async function addExtras(files){const[W,CH]=cardDims();let last=null;S.extras=S.extras||[];
+  for(const f of files){if(!f||!f.type||!f.type.startsWith('image/'))continue;
+    try{const cnv=await loadImage(f,1600);const id=uid();XIMG[id]=cnv;persistImg('x_'+id,cnv);
+      const ar=cnv.width/cnv.height,n=S.extras.length;let w=.42,h=w*W/ar/CH;if(h>.55){h=.55;w=h*CH*ar/W}
+      S.extras.push({id,name:(f.name||'ছবি').replace(/\.[^.]+$/,'').slice(0,22)||'ছবি',x:.5-w/2+(n%4)*.03,y:.5-h/2+(n%4)*.03,w,h,ar,z:'below',op:1,rot:0,r:0,circle:false,bord:0,bordC:'white',shadow:false,flip:false,hidden:false});last=id}
+    catch(er){toast('ছবি খোলা যায়নি')}}
+  if(last){XSEL=last;changed();rebuildPanels();toast('ছবি যোগ হয়েছে — লেখার নিচে বসেছে, টেনে জায়গামতো নিন')}}
+async function replaceExtra(e,f){try{const cnv=await loadImage(f,1600);XIMG[e.id]=cnv;e.ar=cnv.width/cnv.height;fitExtraBox(e);persistImg('x_'+e.id,cnv);changed();rebuildPanels()}catch(er){toast('ছবি খোলা যায়নি')}}
+function delExtra(e){S.extras=S.extras.filter(x=>x!==e);if(XSEL===e.id)XSEL=null;changed();rebuildPanels();toast('ছবি সরানো হয়েছে — ফেরাতে ↶ আনডু')}
+function dupExtra(e){const n=JSON.parse(JSON.stringify(e));n.id=uid();n.x+=.03;n.y+=.03;XIMG[n.id]=XIMG[e.id];persistImg('x_'+n.id,XIMG[n.id]);S.extras.splice(S.extras.indexOf(e)+1,0,n);XSEL=n.id;changed();rebuildPanels()}
+function moveExtra(e,dir){const below=S.extras.filter(x=>x.z!=='above'),above=S.extras.filter(x=>x.z==='above');
+  if(dir==='up'){if(e.z!=='above'){const i=below.indexOf(e);if(i===below.length-1){below.splice(i,1);e.z='above';above.unshift(e)}else{below.splice(i,1);below.splice(i+1,0,e)}}
+    else{const i=above.indexOf(e);if(i<above.length-1){above.splice(i,1);above.splice(i+1,0,e)}}}
+  else if(dir==='down'){if(e.z==='above'){const i=above.indexOf(e);if(i===0){above.splice(0,1);e.z='below';below.push(e)}else{above.splice(i,1);above.splice(i-1,0,e)}}
+    else{const i=below.indexOf(e);if(i>0){below.splice(i,1);below.splice(i-1,0,e)}}}
+  else if(dir==='top'){(e.z==='above'?above:below).splice((e.z==='above'?above:below).indexOf(e),1);e.z='above';above.push(e)}
+  else if(dir==='bottom'){(e.z==='above'?above:below).splice((e.z==='above'?above:below).indexOf(e),1);e.z='below';below.unshift(e)}
+  S.extras=[...below,...above];changed();rebuildPanels()}
+
+/* ---- panels ---- */
+function rebuildPanels(){try{renderBuilder()}catch(e){}renderExtras();renderHeadPos();renderBrandColors();drawOverlay()}
+function showExtraPanel(){const cur=$('#tabs button.on');if(!cur||cur.dataset.tab!=='image')$('#tabs button[data-tab="image"]').click();
+  setTimeout(()=>{const p=$('#extras .xprops');if(p)p.scrollIntoView({behavior:'smooth',block:'nearest'})},60)}
+function thumbOf(id){const c=XIMG[id];return c?thumbURL(c):''}
+function renderExtras(){const root=$('#extras');if(!root)return;root.innerHTML='';
+  const fi=E('input',{type:'file',accept:'image/*',multiple:'',style:'display:none'});fi.onchange=()=>{addExtras([...fi.files]);fi.value=''};
+  root.append(E('div',{class:'card'},E('h4',{},'এক্সট্রা ছবি / স্টিকার',E('span',{class:'hint'},'যেকোনো লেআউটে বসান')),
+    E('label',{class:'drop sm',style:'margin-bottom:8px'},fi,E('div',{class:'ic',html:ic('plus',22)}),E('div',{},E('b',{},'ছবি যোগ করুন'),'একসাথে কয়েকটা দেওয়া যায় · PNG স্টিকারও')),
+    E('div',{class:'hint'},'নতুন ছবি লেখার নিচে বসে। প্রিভিউতে ছবিতে ট্যাপ করে টেনে সরান, কোণা টেনে বড়-ছোট করুন।')));
+  const e=selExtra();if(e)root.append(extraProps(e));
+  root.append(layerList())}
+function extraProps(e){const box=E('div',{class:'card bprops xprops'});const rf=E('input',{type:'file',accept:'image/*',style:'display:none'});rf.onchange=()=>{if(rf.files[0])replaceExtra(e,rf.files[0]);rf.value=''};
+  box.append(E('h4',{},E('span',{class:'bt'},E('span',{class:'xth',style:`background-image:url(${thumbOf(e.id)})`}),e.name||'ছবি'),E('span',{class:'acts'},
+    E('button',{class:'ib sm',title:'কপি',onclick:()=>dupExtra(e),html:ic('copy',16)}),
+    E('button',{class:'ib sm',title:e.hidden?'দেখান':'লুকান',onclick:()=>edit(()=>{e.hidden=!e.hidden},true),html:ic(e.hidden?'eyeoff':'eye',16)}),
+    E('button',{class:'ib sm danger',title:'মুছুন',onclick:()=>delExtra(e),html:ic('trash',16)}))));
+  const sec=(t,...k)=>E('div',{class:'psec'},E('div',{class:'pst'},t),...k);
+  const zs=E('div',{class:'seg'});[['below','লেখার নিচে'],['above','লেখার উপরে']].forEach(([v,l])=>zs.append(E('button',{class:(e.z||'below')===v?'on':'',onclick:()=>moveExtra(e,v==='above'?'top':'bottom')},l)));
+  box.append(sec('লেয়ার',zs,E('div',{class:'lbtns',style:'margin-top:8px'},E('button',{class:'sbtn',onclick:()=>moveExtra(e,'up')},ICO('up'),'এক ধাপ উপরে'),E('button',{class:'sbtn',onclick:()=>moveExtra(e,'down')},ICO('down'),'এক ধাপ নিচে'))));
+  box.append(sec('কোথায় বসবে',E('div',{class:'posrow'},pos9(e),nudgePad(e)),
+    (()=>{let pw=e.w;return bRange('সাইজ',e,'w',.04,1.6,.005,pct,()=>{const cx=e.x+pw/2,cy=e.y+e.h/2;pw=e.w;const[W,CH]=cardDims();const ar=e.circle?1:(e.ar||1);e.h=e.w*W/ar/CH;e.x=cx-e.w/2;e.y=cy-e.h/2;drawOverlay()})})(),
+    E('div',{class:'row'},bRange('ডানে-বামে (X)',e,'x',-.5,1.2,.002,pct),bRange('উপরে-নিচে (Y)',e,'y',-.5,1.2,.002,pct)),
+    E('div',{class:'row'},bRange('ঘোরানো',e,'rot',-180,180,1,deg),bRange('স্বচ্ছতা',e,'op',0,1,.02,pct))));
+  box.append(sec('আকার ও ফ্রেম',bSeg('আকার',e,'circle',[[false,'আসল'],[true,'বৃত্ত']].map(([v,l])=>[String(v),l]),false),
+    e.circle?null:bRange('কোণা গোল',e,'r',0,300,1,px_),bRange('বর্ডার',e,'bord',0,30,1,px_),e.bord>0?bColor('বর্ডারের রং',e,'bordC'):null,
+    E('div',{class:'row'},bSwitch('ছায়া',e,'shadow'),bSwitch('উল্টো (মিরর)',e,'flip')),
+    E('label',{class:'sbtn full',style:'margin-top:6px'},rf,ICO('image'),'ছবি বদলান')));
+  // circle seg stores strings -> normalize
+  box.querySelectorAll('.psec')[2].querySelector('.seg').querySelectorAll('button').forEach((b,i)=>{b.onclick=()=>{e.circle=i===1;fitExtraBox(e);onEdit();rebuildPanels()};b.classList.toggle('on',(i===1)===!!e.circle)});
+  return box}
+function layerList(){const list=E('div',{class:'layers'});const ex=S.extras||[];const above=ex.filter(x=>x.z==='above').reverse(),below=ex.filter(x=>x.z!=='above').reverse();
+  const row=x=>E('div',{class:'layer'+(x.id===XSEL?' on':'')+(x.hidden?' off':''),onclick:ev=>{if(ev.target.closest('button'))return;XSEL=x.id;rebuildPanels()}},
+    E('span',{class:'xth sm',style:`background-image:url(${thumbOf(x.id)})`}),E('span',{class:'nm'},x.name||'ছবি'),
+    E('button',{title:'উপরে',onclick:()=>moveExtra(x,'up'),html:ic('up',15)}),E('button',{title:'নিচে',onclick:()=>moveExtra(x,'down'),html:ic('down',15)}),
+    E('button',{title:'দেখান/লুকান',onclick:()=>edit(()=>{x.hidden=!x.hidden},true),html:ic(x.hidden?'eyeoff':'eye',15)}));
+  const fixed=(icn,t)=>E('div',{class:'layer fixed'},E('span',{class:'lic',html:ic(icn,16)}),E('span',{class:'nm'},t),E('span',{class:'lk',html:ic('lock',13)}));
+  above.forEach(x=>list.append(row(x)));
+  list.append(fixed('type','লেখা (শিরোনাম, লোগো, ট্যাগ…)'));
+  below.forEach(x=>list.append(row(x)));
+  list.append(fixed('image','ব্যাকগ্রাউন্ড ও মূল ছবি'));
+  return E('div',{class:'card'},E('h4',{},'লেয়ার সাজান',E('span',{class:'hint'},'উপরেরটা সামনে দেখায়')),list,
+    ex.length?null:E('div',{class:'hint',style:'margin-top:8px'},'এক্সট্রা ছবি যোগ করলে এখানে দেখাবে, ↑↓ দিয়ে লেখার উপরে বা নিচে নিন।'))}
+function renderHeadPos(){const box=$('#headPos');if(!box)return;box.innerHTML='';
+  if(curTpl()){box.append(E('div',{class:'hint'},'নিজের টেমপ্লেটে শিরোনাম "বিল্ডার" ট্যাব থেকে সরান — ব্লকে ট্যাপ করে টানুন।'));return}
+  const mk=(t,dx,dy)=>E('button',{class:'sbtn',onclick:()=>{S.hdx=+((S.hdx||0)+dx).toFixed(3);S.hdy=+((S.hdy||0)+dy).toFixed(3);onEdit();renderHeadPos();drawOverlay()}},t);
+  box.append(E('div',{class:'posrow'},E('div',{class:'nudge'},E('div',{class:'keys'},E('i'),mk('↑',0,-.01),E('i'),mk('←',-.01,0),E('i',{class:'dot'}),mk('→',.01,0),E('i'),mk('↓',0,.01),E('i'))),
+    E('div',{},bRange('ডানে ↔ বামে',S,'hdx',-.5,.5,.005,pct),bRange('উপরে ↕ নিচে',S,'hdy',-.5,.5,.005,pct))),
+    E('div',{class:'hint'},'প্রিভিউতে শিরোনামে একবার ট্যাপ করুন, তারপর টেনে সরান।'),
+    E('button',{class:'sbtn full',style:'margin-top:10px',onclick:()=>{S.hdx=0;S.hdy=0;onEdit();renderHeadPos();drawOverlay()}},ICO('reset'),'আগের জায়গায় ফেরান'))}
+function brandPick(label,key){const row=E('div',{class:'cpick'});
+  ['','text','acc','acc2','white','black'].forEach(k=>{const sw=E('button',{class:'csw'+((S[key]||'')===k?' on':'')+(k===''?' auto':''),title:k?COLS[k]:'অটো (লেআউট অনুযায়ী)',onclick:()=>{S[key]=k;onEdit();renderBrandColors()}},k===''?'অটো':'');if(k)sw.style.background=colOf(k);row.append(sw)});
+  const ci=E('input',{type:'color',class:'csw'+(String(S[key]||'')[0]==='#'?' on':''),title:'নিজের রং'});ci.value=String(S[key]||'')[0]==='#'?S[key]:'#ff3d7f';ci.oninput=()=>{S[key]=ci.value;onEdit()};ci.onchange=()=>renderBrandColors();row.append(ci);
+  return F(label,row)}
+function renderBrandColors(){const box=$('#brandColors');if(!box)return;box.innerHTML='';
+  box.append(brandPick('লাইন ১ এর রং ('+(S.brand1||'লাইন ১')+')','brandC1'),brandPick('লাইন ২ এর রং ('+(S.brand2||'লাইন ২')+')','brandC2'),
+    E('div',{class:'hint'},LOGO?'লোগো ছবি দেওয়া আছে — রং শুধু লেখা-লোগোতে কাজ করে।':'"অটো" দিলে প্রতিটা লেআউট নিজের মতো রং বসায়।'))}
+
+/* ---- canvas interaction (normal mode) ---- */
+function extraAt(px,py,z){const[W,CH]=cardDims();const ex=(S.extras||[]).filter(e=>z==='above'?e.z==='above':e.z!=='above').reverse();
+  for(const e of ex){if(e.hidden||!XIMG[e.id])continue;if(px>=e.x*W&&px<=(e.x+e.w)*W&&py>=e.y*CH&&py<=(e.y+e.h)*CH)return e}return null}
+const inHL=(px,py,pad)=>!!HLR&&px>=HLR.x0-pad&&px<=HLR.x1+pad&&py>=HLR.y0-pad&&py<=HLR.y1+pad;
+function startX(e,mode,px,py,W,CH){const prev=XSEL;XSEL=e.id;XD={kind:'x',mode,id:e.id,sx:px,sy:py,o:{x:e.x,y:e.y,w:e.w,h:e.h},W,CH,moved:false};if(prev!==XSEL){renderExtras();showExtraPanel()}drawOverlay();return true}
+function normDown(ev){const[px,py,sc]=canvasPt(ev);const[W,CH]=cardDims();TAP=null;const se=selExtra();const head=!curTpl();
+  if(se&&!se.hidden){const cs={nw:[se.x*W,se.y*CH],ne:[(se.x+se.w)*W,se.y*CH],sw:[se.x*W,(se.y+se.h)*CH],se:[(se.x+se.w)*W,(se.y+se.h)*CH]};
+    for(const[k,[hx,hy]] of Object.entries(cs))if(Math.hypot(px-hx,py-hy)<20*sc)return startX(se,k,px,py,W,CH);
+    if(px>=se.x*W&&px<=(se.x+se.w)*W&&py>=se.y*CH&&py<=(se.y+se.h)*CH){startX(se,'move',px,py,W,CH);if(head&&se.z!=='above'&&inHL(px,py,6*sc))XD.headTap=true;return true}}
+  const up=extraAt(px,py,'above');if(up)return startX(up,'move',px,py,W,CH);
+  if(head&&inHL(px,py,(XSEL==='head'?24:6)*sc)){if(XSEL==='head'){XD={kind:'h',sx:px,sy:py,o:{x:S.hdx||0,y:S.hdy||0},W,CH,moved:false};return true}
+    TAP={x:ev.clientX,y:ev.clientY,inHL:true};return false}
+  const dn=extraAt(px,py,'below');if(dn)return startX(dn,'move',px,py,W,CH);
+  TAP={x:ev.clientX,y:ev.clientY,inHL:false};return false}
+function normMove(ev){if(!XD)return false;const[px,py]=canvasPt(ev);const dx=(px-XD.sx)/XD.W,dy=(py-XD.sy)/XD.CH,o=XD.o;XD.moved=true;GUIDE={};
+  if(XD.kind==='h'){let nx=o.x+dx,ny=o.y+dy;if(Math.abs(nx)<.01){nx=0;GUIDE.x=1}if(Math.abs(ny)<.01){ny=0;GUIDE.y=1}S.hdx=nx;S.hdy=ny;schedule();return true}
+  const e=(S.extras||[]).find(x=>x.id===XD.id);if(!e)return true;
+  if(XD.mode==='move'){let nx=o.x+dx,ny=o.y+dy;const sn=ev.altKey?0:.012;
+    if(Math.abs(nx+o.w/2-.5)<sn){nx=.5-o.w/2;GUIDE.x=1}else if(Math.abs(nx)<sn)nx=0;else if(Math.abs(nx+o.w-1)<sn)nx=1-o.w;
+    if(Math.abs(ny+o.h/2-.5)<sn){ny=.5-o.h/2;GUIDE.y=1}else if(Math.abs(ny)<sn)ny=0;else if(Math.abs(ny+o.h-1)<sn)ny=1-o.h;e.x=nx;e.y=ny}
+  else{const m=XD.mode;let nw=Math.max(.03,o.w+(m.includes('e')?dx:-dx));const nh=nw*o.h/o.w;e.w=nw;e.h=nh;e.x=m.includes('w')?o.x+o.w-nw:o.x;e.y=m.includes('n')?o.y+o.h-nh:o.y}
+  schedule();return true}
+function normUp(){if(!XD)return false;const moved=XD.moved,kind=XD.kind,ht=XD.headTap;XD=null;GUIDE={};
+  if(!moved&&ht){XSEL='head';renderExtras();drawOverlay();toast('শিরোনাম বাছাই হয়েছে — এখন টেনে সরান');return true}
+  if(kind==='x'){const e=selExtra();if(e)['x','y','w','h'].forEach(k=>e[k]=Math.round(e[k]*10000)/10000)}
+  if(moved){onEdit();if(kind==='x')renderExtras();else renderHeadPos()}drawOverlay();return true}
+function tapUp(ev){if(!TAP)return;const d=Math.hypot(ev.clientX-TAP.x,ev.clientY-TAP.y);const wasHL=TAP.inHL;TAP=null;if(d>6)return;
+  const prev=XSEL;XSEL=wasHL?'head':null;if(prev!==XSEL){renderExtras();drawOverlay();if(XSEL==='head')toast('শিরোনাম বাছাই হয়েছে — এখন টেনে সরান')}}
+function drawNormalOverlay(){const[W,H]=dims(),[,CH]=cardDims();const rect=cv.getBoundingClientRect();const sc=rect.width?W/rect.width:1;
+  const lab=(t,x,y)=>{oc.font=`600 ${13*sc}px "Hind Siliguri",Inter,sans-serif`;const lw=oc.measureText(t).width+16*sc,lh=24*sc;const ly=y-lh-8*sc<0?y+8*sc:y-lh-8*sc;oc.fillStyle='#8ff3dc';rr(oc,x,ly,lw,lh,lh/2);oc.fill();oc.fillStyle='#0b1d1a';oc.textBaseline='middle';oc.fillText(t,x+8*sc,ly+lh/2+sc)};
+  if(GUIDE.x){oc.fillStyle='#ff5fa2';oc.fillRect(W/2-sc,0,2*sc,CH)}if(GUIDE.y){oc.fillStyle='#ff5fa2';oc.fillRect(0,CH/2-sc,W,2*sc)}
+  if(XSEL==='head'&&HLR&&!curTpl()){const p=10*sc;oc.save();oc.setLineDash([8*sc,6*sc]);oc.strokeStyle='#8ff3dc';oc.lineWidth=2.5*sc;oc.strokeRect(HLR.x0-p,HLR.y0-p,HLR.x1-HLR.x0+2*p,HLR.y1-HLR.y0+2*p);oc.restore();lab('শিরোনাম · টেনে সরান',HLR.x0-p,HLR.y0-p)}
+  const e=selExtra();if(!e||e.hidden)return;const x=e.x*W,y=e.y*CH,w=e.w*W,h=e.h*CH;
+  oc.save();if(e.rot){oc.translate(x+w/2,y+h/2);oc.rotate(e.rot*Math.PI/180);oc.translate(-(x+w/2),-(y+h/2))}
+  oc.strokeStyle='#8ff3dc';oc.lineWidth=2.5*sc;oc.strokeRect(x,y,w,h);
+  [[x,y],[x+w,y],[x,y+h],[x+w,y+h]].forEach(([hx,hy])=>{oc.beginPath();oc.arc(hx,hy,8*sc,0,Math.PI*2);oc.fillStyle='#fff';oc.fill();oc.lineWidth=2.5*sc;oc.strokeStyle='#3b82ff';oc.stroke()});
+  lab((e.z==='above'?'লেখার উপরে · ':'লেখার নিচে · ')+(e.name||'ছবি'),x,y);oc.restore()}
+
 /* ================= REALTIME LOCAL SAVE + CARD HISTORY + APP ================= */
 const kv={get:k=>idb.tx('kv','readonly',s=>s.get(k)),set:(k,v)=>idb.tx('kv','readwrite',s=>s.put(v,k)),del:k=>idb.tx('kv','readwrite',s=>s.delete(k))};
 const cardsDB={all:()=>idb.tx('cards','readonly',s=>s.getAll()),get:k=>idb.tx('cards','readonly',s=>s.get(k)),put:v=>idb.tx('cards','readwrite',s=>s.put(v)),del:k=>idb.tx('cards','readwrite',s=>s.delete(k))};
@@ -1533,11 +1699,13 @@ const IMGTYPE={logo:'image/png',ad:'image/jpeg'};
 async function persistImg(key,c){markSaving();try{if(!c)await kv.del(key);else{const b=await blobOf(c,IMGTYPE[key]||'image/webp',.93);if(b)await kv.set(key,b)}}catch(e){}markSaved()}
 function persistSlots(){persistImg('img1',IMG);[2,3,4].forEach(n=>persistImg('img'+n,SLOT[n]))}
 function normS(){if(!S.hide||typeof S.hide!=='object')S.hide={};if(!Array.isArray(S.customs))S.customs=[];if(!S.sp||typeof S.sp!=='object')S.sp={};
-  if(!(S.size in SIZES)&&S.size!=='custom')S.size='4:5';if(!S.cardId)S.cardId=uid()}
+  if(!(S.size in SIZES)&&S.size!=='custom')S.size='4:5';if(!S.cardId)S.cardId=uid();if(!Array.isArray(S.extras))S.extras=[]}
 async function loadPersisted(){
   const st=await kv.get('state');if(st&&typeof st==='object'){S=Object.assign({},DEF,st)}normS();
   const g=async(k,ls)=>{let c=await blobCanvas(await kv.get(k));if(!c&&ls){const d=store.get(ls);if(d){c=await fromDataURL(d);if(c){await persistImg(k,c);store.del(ls)}}}return c};
   IMG=await g('img1');for(const n of [2,3,4])SLOT[n]=await g('img'+n);LOGO=await g('logo','nc_logo');AD=await g('ad','nc_ad');
+  for(const x of S.extras){XIMG[x.id]=await blobCanvas(await kv.get('x_'+x.id))}
+  try{const keys=(await idb.tx('kv','readonly',s=>s.getAllKeys()))||[];const keep=new Set(S.extras.map(x=>'x_'+x.id));for(const k of keys){if(String(k).startsWith('x_')&&!keep.has(k))kv.del(k)}}catch(er){}
   if(IMG||SLOT[2]||SLOT[3]||SLOT[4])reprocess(true);
   try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist()}catch(e){}
 }
@@ -1549,7 +1717,7 @@ async function cardThumb(){const[W,H]=dims();const tw=360,k=tw/W;const c=documen
 let HSAVING=false;
 async function saveToHistory(silent){if(!hasContent()||HSAVING)return;HSAVING=true;markSaving();
   try{if(!S.cardId)S.cardId=uid();const st=JSON.parse(JSON.stringify(S));delete st.customs;
-    const imgs={1:await blobOf(IMG)};for(const n of [2,3,4])imgs[n]=await blobOf(SLOT[n]);
+    const imgs={1:await blobOf(IMG)};for(const n of [2,3,4])imgs[n]=await blobOf(SLOT[n]);for(const x of (S.extras||[]))imgs['x_'+x.id]=await blobOf(XIMG[x.id]);
     await cardsDB.put({id:S.cardId,t:Date.now(),name:plain(S.headline).replace(/\s+/g,' ').trim().slice(0,90)||'শিরোনামহীন কার্ড',thumb:await cardThumb(),state:st,imgs});
     const all=(await cardsDB.all())||[];if(all.length>40){all.sort((a,b)=>a.t-b.t);for(const c of all.slice(0,all.length-40))await cardsDB.del(c.id)}
     drawHistory();if(!silent)toast('"আমার কার্ড"-এ সেভ হয়েছে ✓')}catch(e){}
@@ -1557,7 +1725,8 @@ async function saveToHistory(silent){if(!hasContent()||HSAVING)return;HSAVING=tr
 async function openCard(id){const c=await cardsDB.get(id);if(!c)return;await saveToHistory(true);
   const customs=S.customs;S=Object.assign({},DEF,c.state,{customs});normS();
   IMG=await blobCanvas(c.imgs&&c.imgs[1]);for(const n of [2,3,4])SLOT[n]=await blobCanvas(c.imgs&&c.imgs[n]);IMGF=null;[2,3,4].forEach(n=>SLOTF[n]=null);
-  persistSlots();reprocess(true);if(S.layout>=LAY().length)S.layout=0;BSEL=null;loadFonts();changed();syncUI(true);renderBuilder();
+  XSEL=null;for(const x of S.extras){XIMG[x.id]=await blobCanvas(c.imgs&&c.imgs['x_'+x.id]);if(XIMG[x.id])persistImg('x_'+x.id,XIMG[x.id])}
+  persistSlots();reprocess(true);if(S.layout>=LAY().length)S.layout=0;BSEL=null;loadFonts();changed();syncUI(true);rebuildPanels();
   $('.content').scrollTop=0;toast('কার্ড খোলা হয়েছে — এডিট করুন')}
 const HURLS=[];
 function ago(t){const s=(Date.now()-t)/1000;const f=n=>BN(Math.floor(n));if(s<60)return'এইমাত্র';if(s<3600)return f(s/60)+' মিনিট আগে';if(s<86400)return f(s/3600)+' ঘণ্টা আগে';if(s<86400*30)return f(s/86400)+' দিন আগে';
@@ -1595,11 +1764,19 @@ function finish(c,k){const{ctx,W,H,u}=c;
 function drawCard(ctx,W,H,li,k,fn){
   K=k;U=W/1080;T=textView();
   const adH=(S.showAd&&AD)?Math.round(W*AD.height/AD.width):0;
-  const c={ctx,W,H:H-adH,u:W/1080};
+  const lay=fn?{draw:fn,custom:true}:(LAY()[li]||BUILTIN[0]);OFFON=!lay.custom;
+  const ex=fn?[]:(S.extras||[]).filter(e=>!e.hidden&&XIMG[e.id]);const split=ex.length>0;
+  const c={ctx:split?passCtx(ctx):ctx,W,H:H-adH,u:W/1080},rc={ctx,W,H:c.H,u:c.u};
   ctx.save();ctx.fillStyle=S.bg;ctx.fillRect(0,0,W,H);
   ctx.save();ctx.beginPath();ctx.rect(0,0,W,c.H);ctx.clip();
-  try{(fn||(LAY()[li]||BUILTIN[0]).draw)(c)}catch(e){console.error('layout',li,e)}
-  try{finish(c,k)}catch(e){}
+  if(split){
+    PASS='bg';try{lay.draw(c)}catch(e){console.error('layout',li,e)}PASS=null;
+    ex.filter(e=>e.z!=='above').forEach(e=>{try{drawExtra(rc,e)}catch(er){}});
+    PASS='fg';try{lay.draw(c)}catch(e){console.error('layout',li,e)}PASS=null;
+    ex.filter(e=>e.z==='above').forEach(e=>{try{drawExtra(rc,e)}catch(er){}});
+  }else{try{lay.draw(c)}catch(e){console.error('layout',li,e)}}
+  PASS=null;OFFON=true;
+  try{finish(rc,k)}catch(e){}
   ctx.restore();
   if(adH)ctx.drawImage(AD,0,c.H,W,adH);
   ctx.restore();
@@ -1607,7 +1784,7 @@ function drawCard(ctx,W,H,li,k,fn){
 let rq=0;
 function render(){
   const[W,H]=dims();if(cv.width!==W||cv.height!==H){cv.width=W;cv.height=H}
-  cx.setTransform(1,0,0,1,0,0);drawCard(cx,W,H,S.layout,1);
+  cx.setTransform(1,0,0,1,0,0);MAINDRAW=!EXPORTING;HLR=null;drawCard(cx,W,H,S.layout,1);MAINDRAW=false;
   const LL=LAY();$('#lname').textContent=`${S.layout+1} / ${LL.length} · ${(LL[S.layout]||LL[0]).name}`;drawOverlay();
 }
 function schedule(){if(!rq)rq=requestAnimationFrame(()=>{rq=0;render()});thumbsSoon()}
@@ -1649,7 +1826,7 @@ let pt=0;function reprocess(now){clearTimeout(pt);const go=()=>{IMGF=processOne(
 /* ---------- history (undo/redo) ---------- */
 const HIST=[],FUT=[];let lastSnap=JSON.stringify(S),ht=0;
 function snap(){clearTimeout(ht);ht=setTimeout(()=>{const j=JSON.stringify(S);if(j!==lastSnap){HIST.push(lastSnap);if(HIST.length>100)HIST.shift();FUT.length=0;lastSnap=j;updUndo()}},450)}
-function restore(j){S=Object.assign({},DEF,JSON.parse(j));normS();if(S.layout>=LAY().length)S.layout=0;setTimeout(renderBuilder,0);lastSnap=j;saveState();loadFonts();reprocess(true);syncUI(true);schedule();updUndo()}
+function restore(j){S=Object.assign({},DEF,JSON.parse(j));normS();setTimeout(()=>{renderExtras();renderHeadPos();renderBrandColors()},0);if(S.layout>=LAY().length)S.layout=0;setTimeout(renderBuilder,0);lastSnap=j;saveState();loadFonts();reprocess(true);syncUI(true);schedule();updUndo()}
 function undo(){clearTimeout(ht);const cur=JSON.stringify(S);if(cur!==lastSnap){HIST.push(lastSnap);lastSnap=cur}if(!HIST.length)return;FUT.push(lastSnap);restore(HIST.pop());toast('আনডু')}
 function redo(){if(!FUT.length)return;HIST.push(lastSnap);restore(FUT.pop());toast('রিডু')}
 function updUndo(){$('#undo').disabled=!HIST.length;$('#redo').disabled=!FUT.length}
@@ -1707,7 +1884,7 @@ $$('[data-wrap]').forEach(b=>b.onclick=()=>{const[o,cl]=b.dataset.wrap.split(','
   const s=ta.selectionStart,e=ta.selectionEnd;if(s===e){toast('আগে শিরোনাম থেকে শব্দ সিলেক্ট করুন');ta.focus();return}
   ta.value=ta.value.slice(0,s)+o+ta.value.slice(s,e)+cl+ta.value.slice(e);S.headline=ta.value;ta.focus();ta.setSelectionRange(e+2,e+2);changed()});
 $('#clearMarks').onclick=()=>{S.headline=plain(S.headline);changed();syncUI(true)};
-const resetKeys=(ks,msg)=>{ks.forEach(k=>S[k]=DEF[k]);reprocess(true);loadFonts();changed();toast(msg)};
+const resetKeys=(ks,msg)=>{ks.forEach(k=>S[k]=DEF[k]);reprocess(true);loadFonts();changed();rebuildPanels();toast(msg)};
 $('#spReset').onclick=()=>resetKeys(['scale','lhm','track','wsp','bscale','btrack'],'স্পেসিং ডিফল্টে ফিরেছে');
 $('#fxReset').onclick=()=>resetKeys(['hfx','overlay','grain','vig','border'],'ইফেক্ট ডিফল্টে ফিরেছে');
 $('#photoReset').onclick=()=>resetKeys(['pBright','pContrast','pSat','pBlur','pBw','pFlip'],'ছবি আগের মতো');
@@ -1741,13 +1918,13 @@ window.addEventListener('drop',e=>{e.preventDefault();const files=[...((e.dataTr
 
 /* drag / zoom on canvas */
 const ptrs=new Map();let pinch=null;
-cv.addEventListener('pointerdown',e=>{cv.setPointerCapture(e.pointerId);if(isBuilding()){builderDown(e);return}ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY});
+cv.addEventListener('pointerdown',e=>{cv.setPointerCapture(e.pointerId);if(isBuilding()){builderDown(e);return}if(!ptrs.size&&normDown(e))return;ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY});
   if(ptrs.size===2){const[a,b]=[...ptrs.values()];pinch={d:Math.hypot(a.x-b.x,a.y-b.y)||1,z:S.zoom}}});
-cv.addEventListener('pointermove',e=>{if(isBuilding()){builderMove(e);return}if(!ptrs.has(e.pointerId))return;const prev=ptrs.get(e.pointerId);const cur={x:e.clientX,y:e.clientY};ptrs.set(e.pointerId,cur);
+cv.addEventListener('pointermove',e=>{if(isBuilding()){builderMove(e);return}if(XD){normMove(e);return}if(!ptrs.has(e.pointerId))return;const prev=ptrs.get(e.pointerId);const cur={x:e.clientX,y:e.clientY};ptrs.set(e.pointerId,cur);
   if(ptrs.size===2&&pinch){const[a,b]=[...ptrs.values()];S.zoom=clamp(pinch.z*Math.hypot(a.x-b.x,a.y-b.y)/pinch.d,1,4);syncRange('zoom');schedule();return}
   const rect=cv.getBoundingClientRect(),sc=cv.width/rect.width;const[W,H]=dims();
   S.ox=clamp(S.ox-(cur.x-prev.x)*sc/(W*0.45*S.zoom),-1,1);S.oy=clamp(S.oy-(cur.y-prev.y)*sc/(H*0.45*S.zoom),-1,1);syncRange('ox');syncRange('oy');schedule()});
-const up=e=>{if(BD){builderUp();return}ptrs.delete(e.pointerId);if(ptrs.size<2)pinch=null;saveState();snap()};
+const up=e=>{if(BD){builderUp();return}if(XD){normUp();return}tapUp(e);ptrs.delete(e.pointerId);if(ptrs.size<2)pinch=null;saveState();snap()};
 cv.addEventListener('pointerup',up);cv.addEventListener('pointercancel',up);
 cv.addEventListener('wheel',e=>{e.preventDefault();S.zoom=clamp(S.zoom*(1-e.deltaY*0.0015),1,4);syncRange('zoom');schedule();snap()},{passive:false});
 
@@ -1833,13 +2010,18 @@ async function download(){
 }
 $('#dl').onclick=download;
 $('#modalClose').onclick=()=>$('#modal').classList.remove('on');
-$('#newc').onclick=async()=>{await saveToHistory(true);S.cardId=uid();S.headline='';IMG=null;IMGF=null;[2,3,4].forEach(n=>{SLOT[n]=null;SLOTF[n]=null});S.zoom=1;S.ox=0;S.oy=0;S.sp={};S.date=bnDate();persistSlots();changed();syncUI(true);drawHistory();
+$('#newc').onclick=async()=>{await saveToHistory(true);S.cardId=uid();S.headline='';IMG=null;IMGF=null;[2,3,4].forEach(n=>{SLOT[n]=null;SLOTF[n]=null});S.zoom=1;S.ox=0;S.oy=0;S.sp={};S.extras=[];XSEL=null;S.date=bnDate();persistSlots();changed();syncUI(true);drawHistory();
   $$('#tabs button')[0].click();$('#headline').focus();toast('আগের কার্ড "আমার কার্ড"-এ রাখা হয়েছে — নতুন কার্ড শুরু')};
 window.addEventListener('keydown',e=>{
   const mod=e.ctrlKey||e.metaKey,key=(e.key||'').toLowerCase();
   if(mod&&key==='s'){e.preventDefault();download();return}
   if(e.key==='Escape'){$$('.modal,.sheet').forEach(m=>m.classList.remove('on'));return}
   const tag=(document.activeElement||{}).tagName;if(tag==='INPUT'||tag==='TEXTAREA'||tag==='SELECT')return;
+  if(!isBuilding()&&(selExtra()||XSEL==='head')){const se=selExtra();const st=e.shiftKey?.02:.004;
+    if(se&&(e.key==='Delete'||e.key==='Backspace')){e.preventDefault();delExtra(se);return}
+    if(e.key==='Escape'){XSEL=null;drawOverlay();renderExtras();return}
+    const mv={ArrowLeft:[-st,0],ArrowRight:[st,0],ArrowUp:[0,-st],ArrowDown:[0,st]}[e.key];
+    if(mv&&!mod){e.preventDefault();if(se){se.x+=mv[0];se.y+=mv[1]}else{S.hdx=(S.hdx||0)+mv[0];S.hdy=(S.hdy||0)+mv[1]}onEdit();drawOverlay();return}}
   if(isBuilding()&&selBlock()){const b=selBlock();const st=e.shiftKey?.02:.004;
     if(e.key==='Delete'||e.key==='Backspace'){e.preventDefault();delBlock(b);return}
     const mv={ArrowLeft:[-st,0],ArrowRight:[st,0],ArrowUp:[0,-st],ArrowDown:[0,st]}[e.key];if(mv&&!mod){e.preventDefault();b.x+=mv[0];b.y+=mv[1];onEdit();drawOverlay();return}
@@ -1879,7 +2061,7 @@ if(document.fonts){document.fonts.onloadingdone=()=>{schedule()}}
   if(S.layout>=LAY().length)S.layout=0;
   buildThumbs();buildRanges();buildSegs();buildVis();
   const tab=store.get('nc_tab');if(tab){const b=$(`#tabs button[data-tab="${tab}"]`);if(b)b.click()}
-  syncUI(true);render();renderThumbs();updUndo();drawPresets();renderBuilder();drawHistory();setupApp();$('#histSave').onclick=()=>saveToHistory(false);
+  syncUI(true);render();renderThumbs();updUndo();drawPresets();renderBuilder();renderExtras();renderHeadPos();renderBrandColors();drawHistory();setupApp();$('#histSave').onclick=()=>saveToHistory(false);
   window.addEventListener('resize',()=>drawOverlay());
   await loadMyFonts();loadFonts();lastSnap=JSON.stringify(S);
   if(!store.get('nc_helped'))$('#help').classList.add('on');
